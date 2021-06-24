@@ -1,0 +1,20 @@
+
+export enum UI_EVENT {
+    NONE = 1000,
+    START_GAME,
+    PLAYER_MOVE,
+    PLAYER_STOP_MOVE,
+    SHOOT_NEAR,
+    SHOOT_LESS_BLOOD,
+    SHOOT_CHANGE_TARGET
+}
+
+export enum AI_STATE {
+    IDLE,
+    MOVE_TO,
+    FOLLOW,
+    ATTACK,
+    WAIT
+}
+
+export const ITEM_COLLISION_RADIUS = 15;

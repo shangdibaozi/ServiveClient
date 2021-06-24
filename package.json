@@ -1,0 +1,15 @@
+{
+  "name": "FreeWorldClient",
+  "type": "3d",
+  "uuid": "3dc47418-80b3-4d7d-81fd-5cf7a02dc5de",
+  "version": "3.2.0",
+  "creator": {
+    "version": "3.2.0"
+  },
+  "dependencies": {
+    "long": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/long": "^4.0.1"
+  }
+}
