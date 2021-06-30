@@ -1,0 +1,4 @@
+
+type UIName = 
+'LoginUI' |
+'LobbyUI';

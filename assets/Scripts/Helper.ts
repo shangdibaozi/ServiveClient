@@ -1,6 +1,6 @@
 import { Quat } from "cc";
 
-export class Util {
+export class Helper {
 
     /**
      * 
@@ -142,5 +142,9 @@ export class Util {
         Quat.lerp(out, a, out, t);
         Quat.normalize(out, out);
         return out;
+    }
+
+    static isStrEmpty(str: string) {
+        return !str; 
     }
 }

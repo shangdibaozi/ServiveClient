@@ -1,11 +1,14 @@
 
-import { _decorator, Component, Node, director } from 'cc';
+import { _decorator, Component, Node, director, resources, Scene } from 'cc';
 const { ccclass, property } = _decorator;
 
 @ccclass('StartScene')
 export class StartScene extends Component {
 
-    start () {
-        director.loadScene('Game');
+    async start () {
+        // resources.loadDir()
+        resources.loadDir('UI', () => {
+            director.loadScene('Game');
+        });
     }
 }
