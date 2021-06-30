@@ -1,16 +1,15 @@
 import { EventTarget } from "cc";
-import { ConfigMgr } from "./Mgr/ConfigMgr";
-import { GameWorld } from "./Mgr/GameWorld";
+import { CustomEventTarget } from "./Libs/KBEngine";
+import { Account } from "./Net/Account";
+import { Login } from "./Net/Login";
 
-class UIEvent extends EventTarget {
-    constructor() {
-        super();
-    }
-}
+
 
 export class Global {
-    static uiEvent: UIEvent = new UIEvent();
-    static gameWorld: GameWorld | null;
-    static cfgMgr: ConfigMgr | null;
+    static login: Login = new Login();
+    static account: Account;
+
+    static uiEvent: CustomEventTarget = new CustomEventTarget();
+    static netEvent: CustomEventTarget = new CustomEventTarget();
 }
 

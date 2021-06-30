@@ -5,6 +5,7 @@
   /* Add your custom configuration here. */
   "compilerOptions": {
     "strictNullChecks": false,
-    "suppressImplicitAnyIndexErrors": true
+    "suppressImplicitAnyIndexErrors": true,
+    "allowSyntheticDefaultImports": true, // 需要开启
   }
 }

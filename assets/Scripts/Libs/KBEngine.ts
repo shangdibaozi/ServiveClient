@@ -1,4 +1,4 @@
-import * as Long from "long";
+import Long from 'long';
 
 export module KBEngine {
     //#region 类型定义
@@ -2707,7 +2707,7 @@ export module KBEngine {
             KBEngineapp.serverScriptVersion = "";
             KBEngineapp.serverProtocolMD5 = "";
             KBEngineapp.serverEntityDefMD5 = "";
-            KBEngineapp.clientVersion = "2.5.8";
+            KBEngineapp.clientVersion = "2.5.10";
             KBEngineapp.clientScriptVersion = "0.1.0";
             // player的相关信息
             KBEngineapp.entity_uuid = null;

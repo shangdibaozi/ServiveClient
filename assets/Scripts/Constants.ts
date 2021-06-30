@@ -17,4 +17,12 @@ export enum AI_STATE {
     WAIT
 }
 
+
+
+export enum NET_EVENT {
+    LOGIN_SUCCESSFULLY = 10000,
+    CREATE_AVATAR,
+    AVATAR_ENABLE
+}
+
 export const ITEM_COLLISION_RADIUS = 15;
