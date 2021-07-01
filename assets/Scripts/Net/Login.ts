@@ -1,5 +1,6 @@
 import { _decorator, Component, game } from "cc";
 import { NET_EVENT } from "../Constants";
+import { UIManager } from "../Game/UIManager";
 import { Global } from "../Global";
 import { KBEngine } from "../Libs/KBEngine";
 
@@ -125,7 +126,10 @@ export class Login extends Component {
         throw new Error('Method not implemented.');
     }
 
+    /**
+     * 玩家初始数据全部下发成功
+     */
     private onAvatarEnable(): void {
-        throw new Error('Method not implemented.');
+        UIManager.show('LobbyUI').destroyUI('LoginUI');
     }
 }

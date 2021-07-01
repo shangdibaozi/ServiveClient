@@ -1,5 +1,6 @@
 
 import { _decorator, Component, Node } from 'cc';
+import { Global } from '../../Global';
 import { Helper } from '../../Helper';
 import { UIBase } from '../../Libs/UIBase';
 const { ccclass, property } = _decorator;
@@ -12,6 +13,8 @@ export class LobbyUI extends UIBase {
         let roomKey = this._inputRoomKey.$EditBox.string;
         if(!Helper.isStrEmpty(roomKey)) {
             console.log(roomKey);
+            let nKey = Number(roomKey);
+            Global.player.opRoom.enterRoom(nKey);
         }
     }
 }

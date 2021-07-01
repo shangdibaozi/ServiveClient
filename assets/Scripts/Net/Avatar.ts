@@ -1,3 +1,5 @@
+import { NET_EVENT } from "../Constants";
+import { Global } from "../Global";
 import { KBEngine } from "../Libs/KBEngine";
 import { OpRoom } from "./Components/OpRoom";
 
@@ -8,6 +10,7 @@ export class Avatar extends KBEngine.Entity {
     __init__() {
         super.__init__();
         console.log('Avatar __init__');
+        Global.player = this;
     }
 
     onDestroy() {
@@ -40,6 +43,7 @@ export class Avatar extends KBEngine.Entity {
 
     onAvatarEnabled() {
         console.log('onAvatarEnable');
+        Global.netEvent.emit(NET_EVENT.AVATAR_ENABLE);
     }
 
     onKillServer(leftTime: number) {

@@ -25,10 +25,19 @@ export class OpRoom extends KBEngine.Component {
     }
 
     enterRoom(roomKey: number) {
-
+        this.baseCall('enterRoom', roomKey);
     }
 
     enterRoomCallback(type: number) {
-
+        switch(type) {
+            case 2000: {
+                console.log('房间key无效');
+                break;
+            }
+            case 2001: {
+                console.log('房间满人');
+                break;
+            }
+        }
     }
 }

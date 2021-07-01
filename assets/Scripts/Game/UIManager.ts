@@ -19,6 +19,7 @@ export class UIManager extends Component {
 
     static show(uiName: UIName, ...args: any) {
         this.inst.show(uiName, ...args);
+        return this;
     }
 
     static hide(uiName: UIName) {
@@ -37,7 +38,6 @@ export class UIManager extends Component {
         if(uibase) {
             this.inst.uiMap.delete(uiName);
             uibase.node.destroyAllChildren();
-            uibase.node.removeAllChildren();
             uibase.node.destroy();
             resources.release(`UI/${uiName}`, Prefab);
         }
