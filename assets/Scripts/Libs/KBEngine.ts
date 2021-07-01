@@ -43,7 +43,7 @@ export module KBEngine {
     export function register(className: string) {
         return function(ctor: { new() : Entity | Component }) {
             KBEallModules[className] = ctor;
-            ctor.prototype.className = className;
+            console.log(`KBEngine.register: ${className}`);
         }
     }
     //#endregion
@@ -2104,7 +2104,6 @@ export module KBEngine {
 		owner: Entity = null;
         name_: string = '';
         
-        
         className: string;
         position: Vector3;
         direction: Vector3;
@@ -2120,6 +2119,15 @@ export module KBEngine {
 
         constructor() {
             this.base = new EntityCall();
+            for(let className in KBEallModules) {
+                if(this instanceof KBEallModules[className]) {
+                    this.className = className;
+                    break;
+                }
+            }
+            if(this.className === '') {
+                debugger;
+            }
             this.base.className = this.className;
             this.base.type = ENTITYCALL_TYPE_BASE;
         }
