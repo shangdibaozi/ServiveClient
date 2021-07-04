@@ -391,12 +391,10 @@ export module ecs {
             // 将组件对象直接附加到实体对象身上，方便直接获取。
             // @ts-ignore
             this[ctor.compName] = component;
+            component.ent = this;
             this.compTid2Ctor.set(componentTypeId, ctor);
             // 广播实体添加组件的消息
             broadcastComponentAddOrRemove(this, componentTypeId);
-
-            component.ent = this;
-
             return component;
         }
 

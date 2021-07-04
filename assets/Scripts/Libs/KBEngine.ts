@@ -2,15 +2,49 @@ import Long from 'long';
 
 export module KBEngine {
     //#region 类型定义
-    type Property = [number, number, string, string, IDATATYPE, Function, number]; // 元组类型
+    // type Property = [number, number, string, string, IDATATYPE, Function, number]; // 元组类型
 
-    type Module = {
+    class Property {
+        properUtype: number;
+        aliasID: number;
+        name: string;
+        defaultValStr: string;
+        utype: IDATATYPE;
+        setmethod: Function;
+        properFlags: number;
+
+        constructor(properUtype: number, aliasID: number, name: string, defaultValStr: string, utype: IDATATYPE, setmethod: Function, properFlags: number) {
+            this.properUtype = properUtype;
+            this.aliasID = aliasID;
+            this.name = name;
+            this.defaultValStr = defaultValStr;
+            this.utype = utype;
+            this.setmethod = setmethod;
+            this.properFlags = properFlags;
+        }
+    }
+
+    class Method {
+        methodUtype: number;
+        aliasID: number;
+        methodName: string;
+        args: IDATATYPE[];
+
+        constructor(methodUtype: number, aliasID: number, methodName: string, args: IDATATYPE[]) {
+            this.methodUtype = methodUtype;
+            this.aliasID = aliasID;
+            this.methodName = methodName;
+            this.args = args;
+        }
+    }
+
+    class Module {
         name : string;
-        aliasID2Properties: {};
+        aliasID2Properties: {[key: string]: Property};
         propertys : {[key: string]: Property};
-        methods : {};
-        base_methods : {};
-        cell_methods : {};
+        clientMethods : {[key: string]: Method};
+        baseMethods : {[key: string]: Method};
+        cellMethods : {[key: string]: Method};
         usePropertyDescrAlias: boolean;
         useMethodDescrAlias: boolean;
     }
@@ -67,7 +101,7 @@ export module KBEngine {
 
         createFromStream(stream: MemoryStream): any
 
-        addToStream(stream: MemoryStream, v: any): void;
+        addToStream(stream: Bundle, v: any): void;
 
         parseDefaultValStr(v: any): any;
 
@@ -81,7 +115,7 @@ export module KBEngine {
             return stream.readUint8();
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeUint8(v);
         }
 
@@ -107,7 +141,7 @@ export module KBEngine {
             return stream.readUint16();
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeUint16(v);
         }
 
@@ -133,7 +167,7 @@ export module KBEngine {
             return stream.readUint32();
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeUint32(v);
         }
 
@@ -159,7 +193,7 @@ export module KBEngine {
             return stream.readUint64();
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeUint64(v);
         }
 
@@ -179,7 +213,7 @@ export module KBEngine {
             return stream.readInt8();
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeInt8(v);
         }
 
@@ -205,7 +239,7 @@ export module KBEngine {
             return stream.readInt16();
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeInt16(v);
         }
 
@@ -231,7 +265,7 @@ export module KBEngine {
             return stream.readInt32();
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeInt32(v);
         }
 
@@ -257,7 +291,7 @@ export module KBEngine {
             return stream.readInt64();
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeInt64(v);
         }
 
@@ -277,7 +311,7 @@ export module KBEngine {
             return stream.readFloat();
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeFloat(v);
         }
 
@@ -297,7 +331,7 @@ export module KBEngine {
             return stream.readDouble();
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeDouble(v);
         }
 
@@ -317,7 +351,7 @@ export module KBEngine {
             return stream.readString();
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeString(v);
         }
 
@@ -337,7 +371,7 @@ export module KBEngine {
             return CLIENT_NO_FLOAT ? new Vector2(stream.readInt32(), stream.readInt32()) : new Vector2(stream.readFloat(), stream.readFloat());
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             if (CLIENT_NO_FLOAT) {
                 stream.writeInt32(v.x);
                 stream.writeInt32(v.y);
@@ -369,7 +403,7 @@ export module KBEngine {
             }
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             if (CLIENT_NO_FLOAT) {
                 stream.writeInt32(v.x);
                 stream.writeInt32(v.y);
@@ -403,7 +437,7 @@ export module KBEngine {
             }
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             if (CLIENT_NO_FLOAT) {
                 stream.writeInt32(v.x);
                 stream.writeInt32(v.y);
@@ -434,7 +468,7 @@ export module KBEngine {
             return stream.readBlob();
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeBlob(v);
         }
 
@@ -454,7 +488,7 @@ export module KBEngine {
             return UTF8ArrayToString(stream.readBlob());
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeBlob(StringToUTF8Array(v));
         }
 
@@ -477,7 +511,7 @@ export module KBEngine {
             let utype = stream.readUint16();
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             let cid = new UINT64(0, 0);
             let id = 0;
             let type = 0;
@@ -507,7 +541,7 @@ export module KBEngine {
             return buf;
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeBlob(v);
         }
 
@@ -539,7 +573,7 @@ export module KBEngine {
             return datas;
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             stream.writeUint32(v.length);
             for (let i = 0; i < v.length; i++) {
                 this.type.addToStream(stream, v[i]);
@@ -580,7 +614,7 @@ export module KBEngine {
             return datas;
         }
 
-        addToStream(stream: MemoryStream, v: any) {
+        addToStream(stream: Bundle, v: any) {
             for (let itemkey in this.dicttype) {
                 this.dicttype[itemkey].addToStream(stream, v[itemkey]);
             }
@@ -607,7 +641,7 @@ export module KBEngine {
         createFromStream(stream: MemoryStream) {
             
         }
-        addToStream(stream: MemoryStream, v: any): void {
+        addToStream(stream: Bundle, v: any): void {
             
         }
         parseDefaultValStr(v: any) {
@@ -1863,7 +1897,7 @@ export module KBEngine {
 
         constructor() {
             this.id = 0;
-            this.className = "";
+            this.className = '';
             this.position = new Vector3(0.0, 0.0, 0.0);
             this.direction = new Vector3(0.0, 0.0, 0.0);
             this.velocity = 0.0
@@ -1890,25 +1924,23 @@ export module KBEngine {
             let currModule = moduleDefs.get(this.className);
             for (let name in currModule.propertys) {
                 let propertydata = currModule.propertys[name];
-                name = propertydata[2];
-                let setmethod = propertydata[5];
-                let flags = propertydata[6];
-                let oldval = this[name];
-
-                if (setmethod) {
+                
+                if (propertydata.setmethod) {
+                    let oldval = this[propertydata.name];
+                    let flags = propertydata.properFlags;
                     // base类属性或者进入世界后cell类属性会触发set_*方法
                     // ED_FLAG_BASE_AND_CLIENT、ED_FLAG_BASE
-                    if (flags == 0x00000020 || flags == 0x00000040) {
+                    if (flags == EntityDataFlags.ED_FLAG_BASE_AND_CLIENT || flags == EntityDataFlags.ED_FLAG_BASE) {
                         if (this.inited && !this.inWorld)
-                            setmethod.call(this, oldval);
+                            propertydata.setmethod.call(this, oldval);
                     }
                     else {
                         if (this.inWorld) {
-                            if (flags == 0x00000008 || flags == 0x00000010) {
+                            if (flags == EntityDataFlags.ED_FLAG_CELL_PUBLIC_AND_OWN || flags == EntityDataFlags.ED_FLAG_OWN_CLIENT) {
                                 if (!this.isPlayer)
                                     continue;
                             }
-                            setmethod.call(this, oldval);
+                            propertydata.setmethod.call(this, oldval);
                         }
                     }
                 }
@@ -1920,14 +1952,14 @@ export module KBEngine {
         abstract onControlled(bIsControlled: boolean): any;
 
         setComponents(modulesDef: Module) {
-            for (let node in modulesDef.propertys) {
-                let data = modulesDef.propertys[node];
-                if (data[4] instanceof DATA_COMPONENT) {
-                    let comp: Component = this[data[2]];
+            for (let name in modulesDef.propertys) {
+                let data = modulesDef.propertys[name];
+                if (data.utype instanceof DATA_COMPONENT) {
+                    let comp: Component = this[data.name];
                     if (comp) {
-                        console.log(`${this.className} setComponents ${data[2]}`);
+                        console.log(`${this.className} setComponents ${data.name}`);
                         comp.base.id = this.id;
-                        comp.entityComponentPropertyID = data[0];
+                        comp.entityComponentPropertyID = data.properUtype;
                         comp.owner = this;
                     }
                 }
@@ -1949,15 +1981,14 @@ export module KBEngine {
                 return;
             }
 
-            let method = moduleDefs.get(this.className).base_methods[funName];
+            let method = moduleDefs.get(this.className).baseMethods[funName];
 
             if (!method) {
                 ERROR_MSG("KBEngine.Entity::baseCall: The server did not find the def_method(" + this.className + "." + funName + ")!");
                 return;
             }
 
-            let methodID = method[0];
-            let methodArgs = method[3];
+            let methodArgs = method.args;
             if (methodArgs.length !== args.length) {
                 ERROR_MSG("KBEngine.Entity::baseCall: args(" + methodArgs.length + "!= " + args.length + ") size is error!");
                 return;
@@ -1966,7 +1997,7 @@ export module KBEngine {
             this.base.newCall();
             //适配组件
             this.base.bundle.writeUint16(0);
-            this.base.bundle.writeUint16(methodID);
+            this.base.bundle.writeUint16(method.methodUtype);
 
             try {
                 for (let i = 0; i < args.length; i++) {
@@ -1999,16 +2030,14 @@ export module KBEngine {
                 return;
             }
 
-            let method = moduleDefs.get(this.className).cell_methods[funName];
+            let method = moduleDefs.get(this.className).cellMethods[funName];
 
             if (!method) {
                 ERROR_MSG("KBEngine.Entity::cellCall: The server did not find the def_method(" + this.className + "." + funName + ")!");
                 return;
             }
 
-            let methodID = method[0];
-            let methodArgs = method[3];
-
+            let methodArgs = method.args;
             if (methodArgs.length != args.length) {
                 ERROR_MSG("KBEngine.Entity::cellCall: args(" + methodArgs.length + "!= " + args.length + ") size is error!");
                 return;
@@ -2016,7 +2045,7 @@ export module KBEngine {
 
             this.cell.newCall();
             this.cell.bundle.writeUint16(0);
-            this.cell.bundle.writeUint16(methodID);
+            this.cell.bundle.writeUint16(method.methodUtype);
 
             try {
                 for (let i = 0; i < args.length; i++) {
@@ -2140,27 +2169,23 @@ export module KBEngine {
             let currModule = moduleDefs.get(this.className);
             for (let name in currModule.propertys) {
                 let propertydata = currModule.propertys[name];
-                let properUtype = propertydata[0];
-                name = propertydata[2];
-                let setmethod = propertydata[5];
-                let flags = propertydata[6];
-                let oldval = this[name];
-
-                if (setmethod != null) {
+                
+                if (propertydata.setmethod) {
+                    let oldval = this[propertydata.name];
+                    let flags = propertydata.properFlags;
                     // base类属性或者进入世界后cell类属性会触发set_*方法
                     // ED_FLAG_BASE_AND_CLIENT、ED_FLAG_BASE
-                    if (flags == 0x00000020 || flags == 0x00000040) {
+                    if (flags == EntityDataFlags.ED_FLAG_BASE_AND_CLIENT || flags == EntityDataFlags.ED_FLAG_BASE) {
                         if (this.inited && !this.inWorld)
-                            setmethod.call(this, oldval);
+                            propertydata.setmethod.call(this, oldval);
                     }
                     else {
                         if (this.inWorld) {
-                            if (flags == 0x00000008 || flags == 0x00000010) {
+                            if (flags == EntityDataFlags.ED_FLAG_CELL_PUBLIC_AND_OWN || flags == EntityDataFlags.ED_FLAG_OWN_CLIENT) {
                                 if (!this.isPlayer)
                                     continue;
                             }
-
-                            setmethod.call(this, oldval);
+                            propertydata.setmethod.call(this, oldval);
                         }
                     }
                 }
@@ -2186,15 +2211,14 @@ export module KBEngine {
                 return;
             }
 
-            let method = moduleDefs.get(this.className).base_methods[funName];
+            let method = moduleDefs.get(this.className).baseMethods[funName];
 
             if (method == undefined) {
                 ERROR_MSG("KBEngine.Entity::baseCall: The server did not find the def_method(" + this.className + "." + funName + ")!");
                 return;
             }
 
-            let methodID = method[0];
-            let methodArgs = method[3];
+            let methodArgs = method.args;
 
             if (methodArgs.length !== args.length) {
                 ERROR_MSG("KBEngine.Entity::baseCall: args(" + methodArgs.length + "!= " + args.length + ") size is error!");
@@ -2204,7 +2228,7 @@ export module KBEngine {
             this.base.newCall();
             //适配组件
             this.base.bundle.writeUint16(this.entityComponentPropertyID);
-            this.base.bundle.writeUint16(methodID);
+            this.base.bundle.writeUint16(method.methodUtype);
 
             try {
                 for (let i = 0; i < args.length; i++) {
@@ -2238,7 +2262,7 @@ export module KBEngine {
                 return;
             }
 
-            let method = moduleDefs.get(this.className).cell_methods[funName];
+            let method = moduleDefs.get(this.className).cellMethods[funName];
 
             if (method == undefined) {
                 ERROR_MSG("KBEngine.Entity::cellCall: The server did not find the def_method(" + this.className + "." + funName + ")!");
@@ -3191,6 +3215,11 @@ export module KBEngine {
             }
         }
 
+        /**
+         * 将数据类型和类型id建立映射关系
+         * @param stream 
+         * @param canprint 
+         */
         createDataTypeFromStream(stream: MemoryStream, canprint: boolean) {
             let utype = stream.readUint16();
             let name = stream.readString();
@@ -3252,53 +3281,52 @@ export module KBEngine {
                 let scriptmodule_name = stream.readString();
                 let scriptUtype = stream.readUint16();
                 let propertysize = stream.readUint16();
-                let methodsize = stream.readUint16();
-                let base_methodsize = stream.readUint16();
-                let cell_methodsize = stream.readUint16();
+                let clientMethodSize = stream.readUint16();
+                let baseMethodsize = stream.readUint16();
+                let cellMethodsize = stream.readUint16();
                 // INFO_MSG("KBEngineApp::Client_onImportClientEntityDef: import(" + scriptmodule_name + "), propertys(" + propertysize + "), " +
-                //     "clientMethods(" + methodsize + "), baseMethods(" + base_methodsize + "), cellMethods(" + cell_methodsize + ")!");
+                //     "clientMethods(" + clientMethodSize + "), baseMethods(" + baseMethodsize + "), cellMethods(" + cellMethodsize + ")!");
 
-                let currModuleDefs = Object.create(null);
+                let currModuleDefs = new Module();
                 moduleDefs.set(scriptmodule_name, currModuleDefs);
-                currModuleDefs["name"] = scriptmodule_name;
-                currModuleDefs["propertys"] = Object.create(null);
-                currModuleDefs['aliasID2Properties'] = Object.create(null);
-                currModuleDefs["methods"] = Object.create(null);
-                currModuleDefs["base_methods"] = Object.create(null);
-                currModuleDefs["cell_methods"] = Object.create(null);
+                currModuleDefs.name = scriptmodule_name;
+                currModuleDefs.propertys = Object.create(null);
+                currModuleDefs.aliasID2Properties = Object.create(null);
+                currModuleDefs.clientMethods = Object.create(null);
+                currModuleDefs.baseMethods = Object.create(null);
+                currModuleDefs.cellMethods = Object.create(null);
                 idModuleDefs.set(scriptUtype, currModuleDefs);
 
 
-                let self_aliasID2Properties: {[key: string]: Property} = currModuleDefs['aliasID2Properties'];
-                let self_propertys: {[key: string]: Property} = currModuleDefs["propertys"];
-                let self_methods = currModuleDefs["methods"];
-                let self_base_methods = currModuleDefs["base_methods"];
-                let self_cell_methods = currModuleDefs["cell_methods"];
+                let self_aliasID2Properties = currModuleDefs.aliasID2Properties;
+                let self_propertys = currModuleDefs.propertys;
+                let clientMethods = currModuleDefs.clientMethods;
+                let self_base_methods = currModuleDefs.baseMethods;
+                let self_cell_methods = currModuleDefs.cellMethods;
 
                 let Class = KBEallModules[scriptmodule_name];
-
+                if (!Class) {
+                    ERROR_MSG("KBEngineApp::Client_onImportClientEntityDef: module(" + scriptmodule_name + ") not found!");
+                    return;
+                }
+                // 解析Properties
                 while (propertysize > 0) {
                     propertysize--;
                     
                     let properUtype = stream.readUint16();
                     let properFlags = stream.readUint32();
                     let aliasID = stream.readInt16();
-                    let name = stream.readString();
+                    let propMethodName = stream.readString();
                     let defaultValStr = stream.readString();
                     let _t = stream.readUint16();
                     let utype = KBEngineDatatypes[_t];
-                    let setmethod = null;
+                    let setmethod = Class.prototype[`set_${propMethodName}`];
 
-                    if (Class) {
-                        setmethod = Class.prototype["set_" + name];
-                        if (!setmethod) {
-                            setmethod = null;
-                        }
-                    }
+                    let savedata = new Property(properUtype, aliasID, propMethodName, defaultValStr, utype, setmethod, properFlags);
 
-                    let savedata: Property = [properUtype, aliasID, name, defaultValStr, utype, setmethod, properFlags];
-                    self_propertys[name] = savedata;
+                    self_propertys[propMethodName] = savedata;
 
+                    // 服务端调用客户端的方法，为了节省流量，所有用aliasID来指明调用的是哪个方法
                     if (aliasID !== -1) {
                         self_aliasID2Properties[aliasID] = savedata;
                         currModuleDefs["usePropertyDescrAlias"] = true;
@@ -3309,39 +3337,61 @@ export module KBEngine {
                     }
                 }
 
-                while (methodsize > 0) {
-                    methodsize--;
+                // 解析ClientMethods
+                while (clientMethodSize > 0) {
+                    clientMethodSize--;
 
                     let methodUtype = stream.readUint16();
                     let aliasID = stream.readInt16();
-                    let name = stream.readString();
+                    let methodName = stream.readString();
                     let argssize = stream.readUint8();
                     let args = [];
 
+                    // 读取方法参数类型
                     while (argssize > 0) {
                         argssize--;
                         args.push(KBEngineDatatypes[stream.readUint16()]);
                     };
 
-                    let savedata = [methodUtype, aliasID, name, args];
-                    self_methods[name] = savedata;
+                    let savedata = new Method(methodUtype, aliasID, methodName, args);
+                    clientMethods[methodName] = savedata;
 
+                    // 服务端调用客户端的方法，为了节省流量，所有用aliasID来指明调用的是哪个方法
                     if (aliasID !== -1) {
-                        self_methods[aliasID] = savedata;
-                        currModuleDefs["useMethodDescrAlias"] = true;
+                        clientMethods[aliasID] = savedata;
+                        currModuleDefs.useMethodDescrAlias = true;
                     }
                     else {
-                        self_methods[methodUtype] = savedata;
-                        currModuleDefs["useMethodDescrAlias"] = false;
+                        clientMethods[methodUtype] = savedata;
+                        currModuleDefs.useMethodDescrAlias = false;
                     }
                 }
 
-                while (base_methodsize > 0) {
-                    base_methodsize--;
+                // 解析BaseMethods
+                while (baseMethodsize > 0) {
+                    baseMethodsize--;
 
                     let methodUtype = stream.readUint16();
                     let aliasID = stream.readInt16();
-                    let name = stream.readString();
+                    let baseMethodName = stream.readString();
+                    let argssize = stream.readUint8();
+                    let args = [];
+
+                    while (argssize > 0) {
+                        argssize--;
+                        args.push(KBEngineDatatypes[stream.readUint16()]);
+                    }
+                    // 是用客户端调用服务端的方法，用户不指定方法的aliasID
+                    self_base_methods[baseMethodName] = new Method(methodUtype, aliasID, baseMethodName, args);
+                }
+
+                // 解析CellMethods
+                while (cellMethodsize > 0) {
+                    cellMethodsize--;
+
+                    let methodUtype = stream.readUint16();
+                    let aliasID = stream.readInt16();
+                    let cellMethodName = stream.readString();
                     let argssize = stream.readUint8();
                     let args = [];
 
@@ -3350,56 +3400,24 @@ export module KBEngine {
                         args.push(KBEngineDatatypes[stream.readUint16()]);
                     };
 
-                    self_base_methods[name] = [methodUtype, aliasID, name, args];
-                    // INFO_MSG("KBEngineApp::Client_onImportClientEntityDef: add(" + scriptmodule_name + "), base_method(" + name + ").");
+                    self_cell_methods[cellMethodName] = new Method(methodUtype, aliasID, cellMethodName, args);
                 }
 
-                while (cell_methodsize > 0) {
-                    cell_methodsize--;
-
-                    let methodUtype = stream.readUint16();
-                    let aliasID = stream.readInt16();
-                    let name = stream.readString();
-                    let argssize = stream.readUint8();
-                    let args = [];
-
-                    while (argssize > 0) {
-                        argssize--;
-                        args.push(KBEngineDatatypes[stream.readUint16()]);
-                    };
-
-                    self_cell_methods[name] = [methodUtype, aliasID, name, args];
-                    // INFO_MSG("KBEngineApp::Client_onImportClientEntityDef: add(" + scriptmodule_name + "), cell_method(" + name + ").");
-                }
-
-                let defmethod = KBEallModules[scriptmodule_name];
-
-                if (!defmethod) {
-                    ERROR_MSG("KBEngineApp::Client_onImportClientEntityDef: module(" + scriptmodule_name + ") not found!");
-                }
-
+                // 给属性设置默认值
                 for (let key in currModuleDefs.propertys) {
                     let infos = currModuleDefs.propertys[key];
-                    let properUtype = infos[0];
-                    let aliasID = infos[1];
-                    let name = infos[2];
-                    let defaultValStr = infos[3];
-                    let utype = infos[4];
+                    let utype = infos.utype;
 
-                    if (defmethod && utype) {
-                        defmethod.prototype[name] = utype.parseDefaultValStr(defaultValStr);
+                    if (utype) {
+                        Class.prototype[infos.name] = utype.parseDefaultValStr(infos.defaultValStr);
                     }
                 }
 
-                for (let key in currModuleDefs.methods) {
-                    let infos = currModuleDefs.methods[key];
-                    let properUtype = infos[0];
-                    let aliasID = infos[1];
-                    let name = infos[2];
-                    let args = infos[3];
-
-                    if (defmethod && !defmethod.prototype[name]) {
-                        WARNING_MSG(scriptmodule_name + ":: method(" + name + ") not implement!");
+                // 检测客户端是否实现了ClientMethods中的方法
+                for (let key in currModuleDefs.clientMethods) {
+                    let infos = currModuleDefs.clientMethods[key];
+                    if (!Class.prototype[infos.methodName]) {
+                        WARNING_MSG(scriptmodule_name + ":: method(" + infos.methodName + ") not implement!");
                     }
                 }
             }
@@ -3839,8 +3857,9 @@ export module KBEngine {
                 entity.__init__();
                 entity.inited = true;
 
-                if (KBEngineapp.args.isOnInitCallPropertysSetMethods)
+                if (KBEngineapp.args.isOnInitCallPropertysSetMethods) {
                     entity.callPropertysSetMethods();
+                }
                 //组件适配：设置组件
                 if (entity.setComponents) {
                     entity.setComponents(moduleDefs.get(entity.className));
@@ -3913,21 +3932,22 @@ export module KBEngine {
                 }
                 else {
                     let desc = pdatas[_t_utype];
-                    if(desc[4] instanceof DATA_COMPONENT) {
-                        entity[desc[2]].onUpdatePropertys(_t_child_utype, stream, -1)
+                    if(desc.utype instanceof DATA_COMPONENT) {
+                        entity[desc.name].onUpdatePropertys(_t_child_utype, stream, -1)
                     }
                 }
                 
-                let setmethod = prop[5];
-                let flags = prop[6];
-                if(prop[4] instanceof DATA_COMPONENT) {
-                    entity[prop[2]].createFromStream(stream);
+                if(prop.utype instanceof DATA_COMPONENT) {
+                    entity[prop.name].createFromStream(stream);
                 }
                 else {
-                    let val = prop[4].createFromStream(stream);
-                    let oldVal = entity[prop[2]];
-                    entity[prop[2]] = val;
+                    let val = prop.utype.createFromStream(stream);
+                    let oldVal = entity[prop.name];
+                    entity[prop.name] = val;
+
+                    let setmethod = prop.setmethod;
                     if(setmethod) {
+                        let flags = prop.properFlags;
                         if(flags === EntityDataFlags.ED_FLAG_BASE_AND_CLIENT || flags === EntityDataFlags.ED_FLAG_BASE) {
                             if(entity.inited) {
                                 setmethod.call(entity, oldVal);
@@ -3979,31 +3999,27 @@ export module KBEngine {
 
             if (propertyUtype === 0) {
                 //实体方法
-                let methoddata = moduleDefs.get(entity.className).methods[methodUtype];
+                let methoddata = moduleDefs.get(entity.className).clientMethods[methodUtype];
                 if (methoddata) {
-                    if (entity[methoddata[2]]) {
-                        let args = [];
-                        let argsdata = methoddata[3];
-                        for (let i = 0; i < argsdata.length; i++) {
-                            args.push(argsdata[i].createFromStream(stream));
-                        }
-                        entity[methoddata[2]].apply(entity, args)
+                    let args = [];
+                    let argsdata = methoddata.args;
+                    for (let i = 0; i < argsdata.length; i++) {
+                        args.push(argsdata[i].createFromStream(stream));
                     }
+                    entity[methoddata.methodName].apply(entity, args)
                 }
             } 
             else {
                 //实体组件方法
-                let comName = moduleDefs.get(entity.className).aliasID2Properties[propertyUtype][2]
+                let comName = moduleDefs.get(entity.className).aliasID2Properties[propertyUtype].name;
                 let comObj = entity[comName]
-                let methoddata = moduleDefs.get(comObj.className).methods[methodUtype]
-                if (comObj[methoddata[2]]) {
-                    let args = [];
-                    let argsdata = methoddata[3];
-                    for (let i = 0; i < argsdata.length; i++) {
-                        args.push(argsdata[i].createFromStream(stream));
-                    }
-                    comObj[methoddata[2]].apply(comObj, args);
+                let methoddata = moduleDefs.get(comObj.className).clientMethods[methodUtype]
+                let args = [];
+                let argsdata = methoddata.args;
+                for (let i = 0; i < argsdata.length; i++) {
+                    args.push(argsdata[i].createFromStream(stream));
                 }
+                comObj[methoddata.methodName].apply(comObj, args);
             }
         }
 
