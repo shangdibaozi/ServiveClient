@@ -15,3 +15,4 @@ export class Global {
     static netEvent: CustomEventTarget = new CustomEventTarget();
 }
 
+window['Global'] = Global;

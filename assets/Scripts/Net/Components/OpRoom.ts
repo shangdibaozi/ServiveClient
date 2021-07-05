@@ -2,6 +2,12 @@ import { KBEngine } from "../../Libs/KBEngine";
 
 @KBEngine.register('OpRoom')
 export class OpRoom extends KBEngine.Component {
+    roomKey: UINT64;
+
+    __init__() {
+        super.__init__();
+    }
+
     onDestroy() {
         throw new Error("Method not implemented.");
     }
@@ -22,6 +28,10 @@ export class OpRoom extends KBEngine.Component {
     }
     onUpdateVolatileData() {
         throw new Error("Method not implemented.");
+    }
+
+    set_roomKey(oldKey: UINT64) {
+        console.log(this.roomKey.toString(), oldKey.toString());
     }
 
     enterRoom(roomKey: number) {
