@@ -2,8 +2,6 @@ import Long from 'long';
 
 export module KBEngine {
     //#region 类型定义
-    // type Property = [number, number, string, string, IDATATYPE, Function, number]; // 元组类型
-
     class Property {
         properUtype: number;
         aliasID: number;
@@ -1874,6 +1872,7 @@ export module KBEngine {
 
     //#region  Entity
     export abstract class Entity {
+        private static defaultValues: Map<string, any> = new Map();
         id: number;
         className: string;
         position: Vector3;
@@ -1913,6 +1912,20 @@ export module KBEngine {
             this.entityLastLocalDir = new Vector3(0.0, 0.0, 0.0);
             this.isOnGround = false;
             this.name = '';
+        }
+
+        resetDefaultValues() {
+            Entity.defaultValues.forEach(this.initProperties, this);
+        }
+
+        private initProperties(value: any, key: string, map: Map<string, any>) {
+            // 创建实体后会在构造函数里面实例化组件对象
+            if(this[key] instanceof Component) {
+                (this[key] as Component).resetDefaultValues();
+            }
+            else {
+                this[key] = value;
+            }
         }
 
         // 与服务端实体脚本中__init__类似, 代表初始化实体
@@ -1961,6 +1974,7 @@ export module KBEngine {
                         comp.base.id = this.id;
                         comp.entityComponentPropertyID = data.properUtype;
                         comp.owner = this;
+                        comp.__init__();
                     }
                 }
             }
@@ -2127,6 +2141,7 @@ export module KBEngine {
 
     //#region EntityComponent
     export abstract class Component {
+        private static defaultValues: Map<string, any> = new Map();
         entityComponentPropertyID: number = 0;
 		componentType: number = 0;
 		ownerID: number = 0;
@@ -2160,10 +2175,18 @@ export module KBEngine {
             this.base.className = this.className;
             this.base.type = ENTITYCALL_TYPE_BASE;
         }
-        
 
-        // 与服务端实体脚本中__init__类似, 代表初始化实体
-        __init__() { }
+        resetDefaultValues() {
+            Component.defaultValues.forEach(this.initProperties, this);
+        }
+
+        private initProperties(value: any, key: string, map: Map<string, any>) {
+            this[key] = value;
+        }
+        
+        __init__() {
+            this.inited = true;
+        }
 
         callPropertysSetMethods() {
             let currModule = moduleDefs.get(this.className);
@@ -2362,34 +2385,42 @@ export module KBEngine {
 
             let count = stream.readUint16();
             if(count > 0) {
-                this.onUpdatePropertys(0, stream, count);
+                this.onUpdateProperties(0, stream, count);
             }
         }
 
-        onUpdatePropertys(propUtype: number, stream: MemoryStream, maxCount: number) {
+        onUpdateProperties(propUtype: number, stream: MemoryStream, maxCount: number) {
             let sm = moduleDefs.get(this.className);
             let pdatas = sm.aliasID2Properties;
+            let utype = 0;
+            let childUtype = propUtype;
             while(stream.length() > 0 && maxCount-- != 0) {
-                let _t_utype = 0;
-                let _t_child_utype = propUtype;
-
-                if(_t_child_utype === 0) {
+                if(childUtype === 0) {
                     if(sm.usePropertyDescrAlias) {
-                        _t_utype = stream.readUint8();
-                        _t_child_utype = stream.readUint8();
+                        utype = stream.readUint8();
+                        childUtype = stream.readUint8();
                     }
                     else {
-                        _t_utype = stream.readUint16();
-                        _t_child_utype = stream.readUint16();
+                        utype = stream.readUint16();
+                        childUtype = stream.readUint16();
                     }
                 }
 
-                let prop = pdatas[_t_child_utype];
+                let prop: Property = null;
+                if(utype === 0) {
+                    prop = pdatas[childUtype];
+                }
+                else {
+                    prop = pdatas[utype]
+                }
+                let val = prop.utype.createFromStream(stream);
+                let oldVal = this[prop.name];
+                this[prop.name] = val;
 
-                let setmethod = prop[5];
-                let flags = prop[6];
-                let val = prop[4].createFromStream(stream);
-                // let oldVal = 
+                let setMethod = prop.setmethod;
+                if(setMethod) {
+                    setMethod.call(this, oldVal);
+                }
             }
         }
     }
@@ -3409,7 +3440,8 @@ export module KBEngine {
                     let utype = infos.utype;
 
                     if (utype) {
-                        Class.prototype[infos.name] = utype.parseDefaultValStr(infos.defaultValStr);
+                        // @ts-ignore
+                        Class.defaultValues.set(infos.name, utype.parseDefaultValStr(infos.defaultValStr));
                     }
                 }
 
@@ -3827,16 +3859,16 @@ export module KBEngine {
         Client_onCreatedProxies(rndUUID: UINT64, eid: number, entityType: string) {
             console.log("KBEngineApp::Client_onCreatedProxies: eid(" + eid + "), entityType(" + entityType + ")!");
 
-            let entity = KBEngineapp.entities[eid];
-
             KBEngineapp.entity_uuid = rndUUID;
             KBEngineapp.entity_id = eid;
-
+            
+            let entity = KBEngineapp.entities[eid];
             if (!entity) {
                 let runclass = KBEngineapp.getEntityClass(entityType);
-                if (!runclass)
+                if (!runclass) {
                     return;
-
+                }
+                // let moduleDefs = moduleDefs.get(entity.className);
                 let entity: Entity = new runclass();
                 entity.id = eid;
                 entity.className = entityType;
@@ -3845,6 +3877,7 @@ export module KBEngine {
                 entity.base.id = eid;
                 entity.base.className = entityType;
                 entity.base.type = ENTITYCALL_TYPE_BASE;
+                entity.resetDefaultValues();
 
                 KBEngineapp.entities[eid] = entity;
 
@@ -3855,15 +3888,12 @@ export module KBEngine {
                 }
 
                 entity.__init__();
-                entity.inited = true;
 
                 if (KBEngineapp.args.isOnInitCallPropertysSetMethods) {
                     entity.callPropertysSetMethods();
                 }
                 //组件适配：设置组件
-                if (entity.setComponents) {
-                    entity.setComponents(moduleDefs.get(entity.className));
-                }
+                entity.setComponents(moduleDefs.get(entity.className));
             }
             else {
                 let entityMessage = this.bufferedCreateEntityMessage[eid];
@@ -3913,32 +3943,33 @@ export module KBEngine {
 
             let currModule = moduleDefs.get(entity.className);
             let pdatas = currModule.aliasID2Properties;
-            let _t_utype = 0;
+            let utype = 0;
+            let childUtype = 0;
             //适配组件：更新实体属性、组件属性
             while (stream.length() > 0) {
-                let _t_child_utype = 0;
                 if (currModule.usePropertyDescrAlias) {
-                    _t_utype = stream.readUint8();
-                    _t_child_utype = stream.readUint8();
+                    utype = stream.readUint8();
+                    childUtype = stream.readUint8();
                 }
                 else {
-                    _t_utype = stream.readUint16();
-                    _t_child_utype = stream.readUint16();
+                    utype = stream.readUint16();
+                    childUtype = stream.readUint16();
                 }
 
                 let prop = null;
-                if(_t_utype === 0) {
-                    prop = pdatas[_t_child_utype];
+                if(utype === 0) {
+                    prop = pdatas[childUtype];
                 }
                 else {
-                    let desc = pdatas[_t_utype];
-                    if(desc.utype instanceof DATA_COMPONENT) {
-                        entity[desc.name].onUpdatePropertys(_t_child_utype, stream, -1)
+                    prop = pdatas[utype];
+                    if(prop.utype instanceof DATA_COMPONENT) {
+                        (entity[prop.name] as Component).onUpdateProperties(childUtype, stream, -1)
+                        return;
                     }
                 }
                 
                 if(prop.utype instanceof DATA_COMPONENT) {
-                    entity[prop.name].createFromStream(stream);
+                    (entity[prop.name] as Component).createFromStream(stream);
                 }
                 else {
                     let val = prop.utype.createFromStream(stream);
