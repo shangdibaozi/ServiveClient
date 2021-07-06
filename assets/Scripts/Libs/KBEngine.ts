@@ -1872,6 +1872,9 @@ export module KBEngine {
 
     //#region  Entity
     export abstract class Entity {
+        /**
+         * 存储服务端实体def文件里面定义的属性的默认值。
+         */
         private static defaultValues: Map<string, any> = new Map();
         id: number;
         className: string;
@@ -1944,8 +1947,9 @@ export module KBEngine {
                     // base类属性或者进入世界后cell类属性会触发set_*方法
                     // ED_FLAG_BASE_AND_CLIENT、ED_FLAG_BASE
                     if (flags == EntityDataFlags.ED_FLAG_BASE_AND_CLIENT || flags == EntityDataFlags.ED_FLAG_BASE) {
-                        if (this.inited && !this.inWorld)
+                        if (this.inited && !this.inWorld) {
                             propertydata.setmethod.call(this, oldval);
+                        }
                     }
                     else {
                         if (this.inWorld) {
@@ -2640,6 +2644,21 @@ export module KBEngine {
         id: number = 0;
     }
 
+    enum ServerType {
+        None = 0,
+        LoginApp = 1,
+        BaseApp = 2,
+    }
+    let Servers = [null, 'loginapp', 'baseapp'];
+
+    enum OpState {
+        None = 0,
+        Create,
+        Login,
+        CreateAccount,
+        ResetPassword
+    }
+
     export class KBEngineApp {
         args: KBEngineArgs;
         idInterval: any;
@@ -2654,7 +2673,7 @@ export module KBEngine {
         domain: string = ""
         isWss: boolean = false;
         protocol: string = "";
-        currconnect: string = "";
+        currconnect: ServerType = ServerType.None;
 
         // 服务端分配的baseapp地址
         baseappIP: string = "";
@@ -2682,8 +2701,8 @@ export module KBEngine {
         fragmentDatasRemain = 0;
 
         msgStream = new MemoryStream(PACKET_MAX_SIZE_TCP);
-        currserver = "loginapp";
-        currstate = "create";
+        currserver = ServerType.LoginApp;
+        currstate = OpState.Create;
 
         socket: WebSocket;
 
@@ -2760,9 +2779,9 @@ export module KBEngine {
                 KBEngineapp.clearEntities(true);
             }
             KBEngineapp.resetSocket();
-            KBEngineapp.currserver = "loginapp";
-            KBEngineapp.currstate = "create";
-            KBEngineapp.currconnect = "loginapp";
+            KBEngineapp.currserver = ServerType.LoginApp;
+            KBEngineapp.currstate = OpState.Create;
+            KBEngineapp.currconnect = ServerType.LoginApp;
             // 扩展数据
             KBEngineapp.serverdatas = undefined;
             // 版本信息
@@ -2812,7 +2831,7 @@ export module KBEngine {
 
         hello() {
             let bundle = createBundleObject();
-            if (KBEngineapp.currserver == "loginapp") {
+            if (KBEngineapp.currserver === ServerType.LoginApp) {
                 bundle.newMessage(KBEMessages.Loginapp_hello);
             }
             else {
@@ -2948,8 +2967,9 @@ export module KBEngine {
                     app.currMsgLen = 0;
                 }
                 else {
-                    if (app.mergeFragmentMessage(stream))
+                    if (app.mergeFragmentMessage(stream)) {
                         break;
+                    }
                 }
             }
         }
@@ -2985,7 +3005,6 @@ export module KBEngine {
 
             let app = KBEngineapp;
             let fragmentStream = app.fragmentStream;
-            console.assert(fragmentStream != null);
 
             if (opsize >= app.fragmentDatasRemain) {
                 let FragmentDataTypes = app.FragmentDataTypes;
@@ -3025,8 +3044,9 @@ export module KBEngine {
         onclose() {
             INFO_MSG('connect close:' + KBEngineapp.currserver);
 
-            if (KBEngineapp.currconnect != KBEngineapp.currserver)
+            if (KBEngineapp.currconnect != KBEngineapp.currserver) {
                 return;
+            }
 
             KBEngineapp.resetSocket();
             KBEngineapp.netEvent.emit(EventTypes.onDisconnected);
@@ -3074,7 +3094,7 @@ export module KBEngine {
                     KBEngineapp.socket.close();
                 }
 
-                if (KBEngineapp.currserver === "loginapp") {
+                if (KBEngineapp.currserver === ServerType.LoginApp) {
                     if (KBEMessages.Loginapp_onClientActiveTick) {
                         let bundle = createBundleObject();
                         bundle.newMessage(KBEMessages.Loginapp_onClientActiveTick);
@@ -3153,9 +3173,9 @@ export module KBEngine {
             INFO_MSG("KBEngineApp::onOpenLoginapp_login: successfully!");
             KBEngineapp.netEvent.emit(EventTypes.onConnectionState, true);
             // 设置当前连接的服务器
-            KBEngineapp.currserver = "loginapp";
+            KBEngineapp.currserver = ServerType.LoginApp;
             // 设置当前状态
-            KBEngineapp.currstate = "login";
+            KBEngineapp.currstate = OpState.Login;
 
             if (!KBEngineapp.loginappMessageImported) {
                 let bundle = createBundleObject();
@@ -3173,8 +3193,8 @@ export module KBEngine {
         onOpenLoginapp_createAccount() {
             KBEngineapp.netEvent.emit(EventTypes.onConnectionState, true);
             INFO_MSG("KBEngineApp::onOpenLoginapp_createAccount: successfully!");
-            KBEngineapp.currserver = "loginapp";
-            KBEngineapp.currstate = "createAccount";
+            KBEngineapp.currserver = ServerType.LoginApp;
+            KBEngineapp.currstate = OpState.CreateAccount;
 
             if (!KBEngineapp.loginappMessageImported) {
                 let bundle = createBundleObject();
@@ -3193,7 +3213,7 @@ export module KBEngine {
             KBEngineapp.socket.onmessage = KBEngineapp.onmessage;
             KBEngineapp.hello();
 
-            if (KBEngineapp.currserver == "loginapp") {
+            if (KBEngineapp.currserver === ServerType.LoginApp) {
                 if (!KBEngineapp.serverErrorsDescrImported) {
                     INFO_MSG("KBEngine::onImportClientMessagesCompleted(): send importServerErrorsDescr!");
                     KBEngineapp.serverErrorsDescrImported = true;
@@ -3202,10 +3222,10 @@ export module KBEngine {
                     bundle.send(KBEngineapp);
                 }
 
-                if (KBEngineapp.currstate == "login") {
+                if (KBEngineapp.currstate === OpState.Login) {
                     KBEngineapp.login_loginapp(false);
                 }
-                else if (KBEngineapp.currstate == "resetpassword") {
+                else if (KBEngineapp.currstate === OpState.ResetPassword) {
                     KBEngineapp.resetpassword_loginapp(false);
                 }
                 else {
@@ -3512,11 +3532,11 @@ export module KBEngine {
                         KBEClientMessages[msgid] = KBEMessages[msgname];
                     }
                     else {
-                        KBEMessages[KBEngineapp.currserver][msgid] = KBEMessages[msgname];
+                        KBEMessages[Servers[app.currserver]][msgid] = KBEMessages[msgname];
                     }
                 }
                 else {
-                    KBEMessages[app.currserver][msgid] = new Message(msgid, msgname, msglen, argtype, argstypes, handler);
+                    KBEMessages[Servers[app.currserver]][msgid] = new Message(msgid, msgname, msglen, argtype, argstypes, handler);
                 }
             };
 
@@ -3581,10 +3601,10 @@ export module KBEngine {
         getServerAddr(ip: string, port: number) {
             let serverAddr: string;
             if (KBEngineapp.args.domain && KBEngineapp.args.domain.length > 0) {
-                if (KBEngineapp.currconnect === 'loginapp') {
+                if (KBEngineapp.currconnect === ServerType.LoginApp) {
                     serverAddr = KBEngineapp.args.loginAddr;
                 } 
-                else if(KBEngineapp.currconnect === 'baseapp') {
+                else if(KBEngineapp.currconnect === ServerType.BaseApp) {
                     serverAddr = KBEngineapp.args.baseAddr + port;
                 }
             } 
@@ -3596,7 +3616,7 @@ export module KBEngine {
 
         createAccount_loginapp(noconnect: boolean) {
             if (noconnect) {
-                KBEngineapp.currconnect = "loginapp";
+                KBEngineapp.currconnect = ServerType.LoginApp;
                 let serverAddr = this.getServerAddr(KBEngineapp.ip, KBEngineapp.port);
                 INFO_MSG("KBEngineApp::createAccount_loginapp: start connect to " + serverAddr + "!");
                 //这里需要调整
@@ -3654,7 +3674,7 @@ export module KBEngine {
          */
         login_loginapp(noconnect: boolean) {
             if (noconnect) {
-                KBEngineapp.currconnect = "loginapp";
+                KBEngineapp.currconnect = ServerType.LoginApp;
                 let serverAddr = this.getServerAddr(KBEngineapp.ip, KBEngineapp.port);
                 INFO_MSG("KBEngineApp::login_loginapp: start connect to " + serverAddr + "!");
                 KBEngineapp.connect(serverAddr);
@@ -3674,8 +3694,8 @@ export module KBEngine {
 
         onOpenLoginapp_resetpassword() {
             INFO_MSG("KBEngineApp::onOpenLoginapp_resetpassword: successfully!");
-            KBEngineapp.currserver = "loginapp";
-            KBEngineapp.currstate = "resetpassword";
+            KBEngineapp.currserver = ServerType.LoginApp;
+            KBEngineapp.currstate = OpState.ResetPassword;
 
             if (!KBEngineapp.loginappMessageImported) {
                 let bundle = createBundleObject();
@@ -3697,7 +3717,7 @@ export module KBEngine {
 
         resetpassword_loginapp(noconnect: boolean) {
             if (noconnect) {
-                KBEngineapp.currconnect = "loginapp";
+                KBEngineapp.currconnect = ServerType.LoginApp;
                 let serverAddr = this.getServerAddr(KBEngineapp.ip, KBEngineapp.port);
                 INFO_MSG("KBEngineApp::resetpassword_loginapp: start connect to " + serverAddr + "!");
                 KBEngineapp.connect(serverAddr);
@@ -3714,7 +3734,7 @@ export module KBEngine {
 
         onOpenBaseapp() {
             INFO_MSG("KBEngineApp::onOpenBaseapp: successfully!");
-            KBEngineapp.currserver = "baseapp";
+            KBEngineapp.currserver = ServerType.BaseApp;
 
             if (!KBEngineapp.baseappMessageImported) {
                 let bundle = createBundleObject();
@@ -3731,7 +3751,7 @@ export module KBEngine {
         login_baseapp(noconnect: boolean) {
             if (noconnect) {
                 KBEngineapp.netEvent.emit(EventTypes.onLoginBaseapp);
-                KBEngineapp.currconnect = "baseapp";
+                KBEngineapp.currconnect = ServerType.BaseApp;
                 let serverAddr = this.getServerAddr(KBEngineapp.baseappIP, KBEngineapp.baseappTcpPort);
                 INFO_MSG("KBEngineApp::login_baseapp: start connect to " + serverAddr + "!");
                 KBEngineapp.connect(serverAddr);
@@ -3760,7 +3780,7 @@ export module KBEngine {
             KBEngineapp.resetSocket();
             KBEngineapp.netEvent.emit(EventTypes.onReloginBaseapp);
 
-            KBEngineapp.currconnect = "baseapp";
+            KBEngineapp.currconnect = ServerType.BaseApp;
             let serverAddr = this.getServerAddr(KBEngineapp.baseappIP, KBEngineapp.baseappTcpPort);
             INFO_MSG("KBEngineApp::reloginBaseapp: start connect to " + serverAddr + "!");
             KBEngineapp.connect(serverAddr);
@@ -3772,7 +3792,7 @@ export module KBEngine {
 
         onReOpenBaseapp() {
             INFO_MSG("KBEngineApp::onReOpenBaseapp: successfully!");
-            KBEngineapp.currserver = "baseapp";
+            KBEngineapp.currserver = ServerType.BaseApp;
 
             let bundle = createBundleObject();
             bundle.newMessage(KBEMessages.Baseapp_reloginBaseapp);
@@ -3868,7 +3888,7 @@ export module KBEngine {
                 if (!runclass) {
                     return;
                 }
-                // let moduleDefs = moduleDefs.get(entity.className);
+                
                 let entity: Entity = new runclass();
                 entity.id = eid;
                 entity.className = entityType;
@@ -3956,39 +3976,36 @@ export module KBEngine {
                     childUtype = stream.readUint16();
                 }
 
-                let prop = null;
                 if(utype === 0) {
-                    prop = pdatas[childUtype];
-                }
-                else {
-                    prop = pdatas[utype];
+                    let prop = pdatas[childUtype];
                     if(prop.utype instanceof DATA_COMPONENT) {
-                        (entity[prop.name] as Component).onUpdateProperties(childUtype, stream, -1)
-                        return;
+                        (entity[prop.name] as Component).createFromStream(stream);
+                    }
+                    else {
+                        let val = prop.utype.createFromStream(stream);
+                        entity[prop.name] = val;
+                        
+                        let setmethod = prop.setmethod;
+                        if(setmethod) {
+                            let oldVal = entity[prop.name];
+                            let flags = prop.properFlags;
+                            if(flags === EntityDataFlags.ED_FLAG_BASE_AND_CLIENT || flags === EntityDataFlags.ED_FLAG_BASE) {
+                                if(entity.inited) {
+                                    setmethod.call(entity, oldVal);
+                                }
+                            }
+                            else {
+                                if(entity.inWorld) {
+                                    setmethod.call(entity, oldVal);
+                                }
+                            }
+                        }
                     }
                 }
-                
-                if(prop.utype instanceof DATA_COMPONENT) {
-                    (entity[prop.name] as Component).createFromStream(stream);
-                }
                 else {
-                    let val = prop.utype.createFromStream(stream);
-                    let oldVal = entity[prop.name];
-                    entity[prop.name] = val;
-
-                    let setmethod = prop.setmethod;
-                    if(setmethod) {
-                        let flags = prop.properFlags;
-                        if(flags === EntityDataFlags.ED_FLAG_BASE_AND_CLIENT || flags === EntityDataFlags.ED_FLAG_BASE) {
-                            if(entity.inited) {
-                                setmethod.call(entity, oldVal);
-                            }
-                        }
-                        else {
-                            if(entity.inWorld) {
-                                setmethod.call(entity, oldVal);
-                            }
-                        }
+                    let prop = pdatas[utype];
+                    if(prop.utype instanceof DATA_COMPONENT) {
+                        (entity[prop.name] as Component).onUpdateProperties(childUtype, stream, -1)
                     }
                 }
             }
@@ -4121,8 +4138,9 @@ export module KBEngine {
                 entity.inWorld = true;
                 entity.enterWorld();
 
-                if (KBEngineapp.args.isOnInitCallPropertysSetMethods)
+                if (KBEngineapp.args.isOnInitCallPropertysSetMethods) {
                     entity.callPropertysSetMethods();
+                }
 
                 entity.set_direction(entity.direction);
                 entity.set_position(entity.position);
@@ -4152,8 +4170,9 @@ export module KBEngine {
                     entity.inWorld = true;
                     entity.enterWorld();
 
-                    if (KBEngineapp.args.isOnInitCallPropertysSetMethods)
+                    if (KBEngineapp.args.isOnInitCallPropertysSetMethods) {
                         entity.callPropertysSetMethods();
+                    }
                 }
             }
         }
