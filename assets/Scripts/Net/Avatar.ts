@@ -14,31 +14,31 @@ export class Avatar extends KBEngine.Entity {
     }
 
     onDestroy() {
-        throw new Error("Method not implemented.");
+        console.log("onDestroy.");
     }
     
     onControlled(bIsControlled: boolean) {
-        throw new Error("Method not implemented.");
+        console.log("onControlled.");
     }
 
     onEnterWorld() {
-        throw new Error("Method not implemented.");
+        console.log("onEnterWorld.");
     }
 
     onLeaveWorld() {
-        throw new Error("Method not implemented.");
+        console.log("onLeaveWorld.");
     }
 
     onEnterSpace() {
-        throw new Error("Method not implemented.");
+        console.log("onEnterSpace.");
     }
 
     onLeaveSpace() {
-        throw new Error("Method not implemented.");
+        console.log("onLeaveSpace.");
     }
 
     onUpdateVolatileData() {
-        throw new Error("Method not implemented.");
+        console.log("onUpdateVolatileData.");
     }
 
     onAvatarEnabled() {
